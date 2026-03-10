@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>automatic_dangjik (HTML)</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --line: #d0d5dd;
+      --text: #101828;
+      --sub: #475467;
+      --brand: #175cd3;
+      --ok: #027a48;
+      --err: #b42318;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+      background: linear-gradient(120deg, #f5f7fb 0%, #eef4ff 100%);
+      color: var(--text);
+    }
+    .wrap { max-width: 900px; margin: 28px auto; padding: 0 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+    }
+    h1 { margin: 0 0 10px 0; font-size: 26px; }
+    p { margin: 0 0 12px 0; color: var(--sub); }
+    .upload-box {
+      border: 1px dashed #9ca3af;
+      border-radius: 10px;
+      background: #fafafa;
+      padding: 14px;
+      margin-top: 14px;
+    }
+    .upload-box p { margin: 6px 0 8px; color: var(--sub); font-size: 14px; }
+    label { display: block; margin-bottom: 6px; font-weight: 600; }
+    input[type=file] {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+    button, .download-btn {
+      display: inline-block;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+      background: var(--brand);
+      text-decoration: none;
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    #downloadBtn { background: var(--ok); }
+    .file-list {
+      margin-top: 8px;
+      color: var(--sub);
+      font-size: 14px;
+      white-space: pre-line;
+    }
+    .actions { margin-top: 18px; }
+    .result { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .status {
+      font-size: 14px;
+      color: var(--sub);
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+    }
+    .status.error { color: var(--err); }
+    .status.ok { color: #05603a; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>당직 자동취합 / 확정본 생성기</h1>
+      <p>balju-auto-generator처럼 업로드 -> 생성 -> 다운로드 순서로 동작합니다.</p>
+
+      <form id="generatorForm">
+        <div class="upload-box">
+          <strong>1) 팀 파일 업로드</strong>
+          <p>리빙팀/패션1팀/패션2팀 파일 3개를 한번에 선택하세요.</p>
+        <label for="files">참고파일 업로드 (xlsx 3개, 다중 선택)</label>
+        <input id="files" type="file" accept=".xlsx" multiple />
+          <div id="filesInfo" class="file-list">선택된 파일 없음</div>
+        </div>
+        <div class="actions">
+          <button id="generateBtn" type="submit">2) 당직확정본 생성</button>
+        </div>
+      </form>
+
+      <div class="result">
+        <div id="status" class="status">생성 대기 중</div>
+        <a id="downloadBtn" class="download-btn hidden" href="#" download>3) 파일 다운로드</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const EXCLUDED_NAMES = new Set(["이범진", "이선한", "윤녹규"]);
+    const OFF_MARKERS = new Set(["●", "이월", "반차", "연차", "예비군"]);
+    const SUMMARY_STOP_MARKERS = ["휴무인원", "출근인원", "당직인원"];
+
+    const state = {
+      outBlob: null,
+      outName: "",
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $("status");
+    const formEl = $("generatorForm");
+    const generateBtn = $("generateBtn");
+    const downloadBtn = $("downloadBtn");
+    const filesInput = $("files");
+    const filesInfo = $("filesInfo");
+
+    function setStatus(msg, type = "") {
+      statusEl.textContent = msg;
+      statusEl.className = "status" + (type ? " " + type : "");
+    }
+
+    function cleanText(v) {
+      if (v === undefined || v === null) return "";
+      return String(v).trim();
+    }
+
+    function normalizeLabel(v) {
+      return cleanText(v).replace(/\s+/g, "");
+    }
+
+    function cell(ws, r, c) {
+      return ws[XLSX.utils.encode_cell({ r, c })];
+    }
+
+    function getVal(ws, r, c) {
+      const obj = cell(ws, r, c);
+      return obj ? obj.v : undefined;
+    }
+
+    function getText(ws, r, c) {
+      return cleanText(getVal(ws, r, c));
+    }
+
+    function getFormula(ws, r, c) {
+      const obj = cell(ws, r, c);
+      return obj && obj.f ? String(obj.f) : "";
+    }
+
+    function setCellObj(ws, r, c, obj) {
+      ws[XLSX.utils.encode_cell({ r, c })] = obj;
+      const range = ws["!ref"] ? XLSX.utils.decode_range(ws["!ref"]) : { s: { r, c }, e: { r, c } };
+      if (r < range.s.r) range.s.r = r;
+      if (c < range.s.c) range.s.c = c;
+      if (r > range.e.r) range.e.r = r;
+      if (c > range.e.c) range.e.c = c;
+      ws["!ref"] = XLSX.utils.encode_range(range);
+    }
+
+    function setFormula(ws, r, c, formula) {
+      setCellObj(ws, r, c, { t: "n", f: formula });
+    }
+
+    function clearCell(ws, r, c) {
+      delete ws[XLSX.utils.encode_cell({ r, c })];
+    }
+
+    function buildMergedValueMap(ws, targetCol) {
+      const map = new Map();
+      const merges = ws["!merges"] || [];
+      for (const m of merges) {
+        if (!(m.s.c <= targetCol && targetCol <= m.e.c)) continue;
+        const txt = getText(ws, m.s.r, m.s.c);
+        if (!txt) continue;
+        for (let rr = m.s.r; rr <= m.e.r; rr++) {
+          map.set(rr, txt);
+        }
+      }
+      return map;
+    }
+
+    function findNameHeader(ws) {
+      const maxRow = Math.min(40, XLSX.utils.decode_range(ws["!ref"]).e.r + 1);
+      const maxCol = Math.min(30, XLSX.utils.decode_range(ws["!ref"]).e.c + 1);
+      for (let r = 0; r < maxRow; r++) {
+        for (let c = 0; c < maxCol; c++) {
+          const norm = normalizeLabel(getVal(ws, r, c));
+          if (norm === "성명") return { headerRow: r, nameCol: c };
+        }
+      }
+      return null;
+    }
+
+    function parseYearMonthFromDateFormula(formula, ws) {
+      if (!formula) return null;
+      const m = formula.replace(/\s+/g, "").match(/^DATE\(([^,]+),([^,]+),1\)$/i);
+      if (!m) return null;
+      const resolveToken = (token) => {
+        if (/^\$?[A-Z]{1,3}\$?\d+$/i.test(token)) {
+          const addr = token.replace(/\$/g, "").toUpperCase();
+          const c = ws[addr];
+          if (!c) return NaN;
+          return Number(c.v);
+        }
+        return Number(token);
+      };
+      const year = Math.trunc(resolveToken(m[1]));
+      const month = Math.trunc(resolveToken(m[2]));
+      if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return null;
+      return { year, month };
+    }
+
+    function findFirstDayCol(ws, headerRow, nameCol) {
+      const maxCol = Math.min(XLSX.utils.decode_range(ws["!ref"]).e.c, nameCol + 90);
+      for (let c = nameCol + 1; c <= maxCol; c++) {
+        const f = getFormula(ws, headerRow, c).replace(/\s+/g, "");
+        if (/^DATE\(.+,1\)$/i.test(f)) return c;
+      }
+      const weekdayRow = headerRow + 1;
+      for (let c = nameCol + 1; c <= maxCol; c++) {
+        const f = getFormula(ws, weekdayRow, c).toUpperCase();
+        if (f.includes("WEEKDAY(")) return c;
+      }
+      return nameCol + 4;
+    }
+
+    function resolveDaysInMonth(ws, headerRow, dayStartCol) {
+      const ym = parseYearMonthFromDateFormula(getFormula(ws, headerRow, dayStartCol), ws);
+      if (ym) return new Date(ym.year, ym.month, 0).getDate();
+      const maxCol = XLSX.utils.decode_range(ws["!ref"]).e.c;
+      let count = 0;
+      for (let c = dayStartCol; c <= maxCol && count < 31; c++) {
+        const hv = getText(ws, headerRow, c);
+        const wf = getFormula(ws, headerRow + 1, c);
+        if (!hv && !wf) break;
+        count += 1;
+      }
+      if (count >= 28 && count <= 31) return count;
+      return 31;
+    }
+
+    function findScheduleSheet(wb) {
+      for (const name of wb.SheetNames) {
+        const ws = wb.Sheets[name];
+        if (findNameHeader(ws)) return ws;
+      }
+      throw new Error("성명 헤더가 있는 시트를 찾지 못했습니다.");
+    }
+
+    function extractEmployees(ws, headerRow, nameCol) {
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+      const teamCol = 1;
+      const partCol = 2;
+      const teamMap = buildMergedValueMap(ws, teamCol);
+      const partMap = buildMergedValueMap(ws, partCol);
+      const employees = [];
+      let currentTeam = "";
+
+      for (let r = headerRow + 2; r <= range.e.r; r++) {
+        const colB = cleanText(getVal(ws, r, teamCol)) || (teamMap.get(r) || "");
+        if (colB) {
+          currentTeam = colB.replace(/\n/g, " ").trim();
+          if (SUMMARY_STOP_MARKERS.some((m) => currentTeam.includes(m))) break;
+        }
+        const name = cleanText(getVal(ws, r, nameCol));
+        if (!name) continue;
+        let part = cleanText(getVal(ws, r, partCol)) || (partMap.get(r) || "");
+        part = part ? part.replace(/\n/g, " ").trim() : "";
+        if (!part) part = "PART_ROW_" + (r + 1);
+        const team = currentTeam || "미분류";
+        employees.push({ row: r, name, team, part: `${team}|${part}` });
+      }
+      if (!employees.length) throw new Error("직원 목록을 인식하지 못했습니다.");
+      return employees;
+    }
+
+    function buildRowMap(employees) {
+      const map = new Map();
+      for (const e of employees) {
+        if (map.has(e.name)) throw new Error(`중복 직원명: ${e.name}`);
+        map.set(e.name, e.row);
+      }
+      return map;
+    }
+
+    function loadContext(wb) {
+      const ws = findScheduleSheet(wb);
+      const hdr = findNameHeader(ws);
+      if (!hdr) throw new Error("성명 헤더를 찾지 못했습니다.");
+      const dayStartCol = findFirstDayCol(ws, hdr.headerRow, hdr.nameCol);
+      const daysInMonth = resolveDaysInMonth(ws, hdr.headerRow, dayStartCol);
+      const dayEndCol = dayStartCol + daysInMonth - 1;
+      const employees = extractEmployees(ws, hdr.headerRow, hdr.nameCol);
+      return {
+        wb, ws, headerRow: hdr.headerRow, nameCol: hdr.nameCol,
+        dayStartCol, dayEndCol, daysInMonth, employees,
+      };
+    }
+
+    function isUnavailable(v) {
+      const t = cleanText(v);
+      if (!t) return false;
+      if (t === "당직") return false;
+      return OFF_MARKERS.has(t);
+    }
+
+    function isAvailable(ws, row, col) {
+      return !isUnavailable(getVal(ws, row, col));
+    }
+
+    function hadTwoOffBefore(ws, row, dayCol, dayStartCol) {
+      if (dayCol - 1 < dayStartCol) return false;
+      const p1 = getText(ws, row, dayCol - 1);
+      const p2 = dayCol - 2 >= dayStartCol ? getText(ws, row, dayCol - 2) : "";
+      return p1 === "●" && p2 === "●";
+    }
+
+    function dayType(ws, headerRow, col) {
+      const t = getText(ws, headerRow + 1, col);
+      return (t.includes("금") || t.includes("토")) ? "extended" : "normal";
+    }
+
+    function restoreFormulas(ctx) {
+      const startAddr = XLSX.utils.encode_col(ctx.dayStartCol);
+      const endAddr = XLSX.utils.encode_col(ctx.dayEndCol);
+      const dutyCountCol = ctx.nameCol + 3; // H
+      for (const e of ctx.employees) {
+        const rr = e.row + 1;
+        setFormula(ctx.ws, e.row, dutyCountCol, `COUNTIF(${startAddr}${rr}:${endAddr}${rr},"당직")`);
+      }
+      const firstRow = Math.min(...ctx.employees.map((e) => e.row)) + 1;
+      const lastRow = Math.max(...ctx.employees.map((e) => e.row)) + 1;
+      const ajCol = XLSX.utils.decode_col("AJ");
+      setFormula(ctx.ws, 1, ajCol, `COUNTIF(${startAddr}${firstRow}:${endAddr}${lastRow},"당직")`);
+    }
+
+    function clearExistingDuty(ctx, rows) {
+      for (const r of rows) {
+        for (let c = ctx.dayStartCol; c <= ctx.dayEndCol; c++) {
+          if (getText(ctx.ws, r, c) === "당직") clearCell(ctx.ws, r, c);
+        }
+      }
+    }
+
+    function assignDuty(ctx) {
+      const eligible = ctx.employees.filter((e) => !EXCLUDED_NAMES.has(e.name));
+      const n = eligible.length;
+      if (!n) throw new Error("당직 배정 가능한 직원이 없습니다.");
+      if (ctx.daysInMonth < n) throw new Error(`배정 불가: 일수(${ctx.daysInMonth}) < 인원(${n})`);
+      if (ctx.daysInMonth > n * 2) throw new Error(`배정 불가: 일수(${ctx.daysInMonth}) > 2*인원(${n})`);
+
+      const partMembers = new Map();
+      const byRow = new Map();
+      for (const e of eligible) {
+        byRow.set(e.row, e);
+        if (!partMembers.has(e.part)) partMembers.set(e.part, []);
+        partMembers.get(e.part).push(e.row);
+      }
+
+      const assignedTotal = new Map();
+      const dayTypeCount = new Map();
+      for (const e of eligible) {
+        assignedTotal.set(e.row, 0);
+        dayTypeCount.set(e.row, { normal: 0, extended: 0 });
+      }
+      const assignments = new Map();
+      const partUnsafeDays = [];
+      let prevAssigned = null;
+
+      for (let day = 1; day <= ctx.daysInMonth; day++) {
+        const col = ctx.dayStartCol + day - 1;
+        const dt = dayType(ctx.ws, ctx.headerRow, col);
+        let candidates = eligible
+          .map((e) => e.row)
+          .filter((r) => isAvailable(ctx.ws, r, col))
+          .filter((r) => assignedTotal.get(r) < 2)
+          .filter((r) => r !== prevAssigned);
+
+        if (!candidates.length) throw new Error(`${day}일 후보 없음`);
+
+        const safeRows = [];
+        for (const r of candidates) {
+          const part = byRow.get(r).part;
+          const members = partMembers.get(part);
+          if (!members || members.length < 2) {
+            safeRows.push(r);
+            continue;
+          }
+          const openableAfter = members.filter((m) => m !== r && isAvailable(ctx.ws, m, col)).length;
+          if (openableAfter >= 1) safeRows.push(r);
+        }
+
+        const keepFeasible = (rows) => {
+          const remain = ctx.daysInMonth - day;
+          const zeroCount = Array.from(assignedTotal.values()).filter((v) => v === 0).length;
+          return rows.filter((r) => {
+            const zeroAfter = zeroCount - (assignedTotal.get(r) === 0 ? 1 : 0);
+            return zeroAfter <= remain;
+          });
+        };
+
+        let prioritized = safeRows.length ? safeRows : candidates;
+        let feasible = keepFeasible(prioritized);
+        if (!feasible.length && safeRows.length) {
+          feasible = keepFeasible(candidates);
+          if (feasible.length) partUnsafeDays.push(day);
+        } else if (!safeRows.length) {
+          partUnsafeDays.push(day);
+        }
+        if (!feasible.length) throw new Error(`${day}일 배정 불가`);
+
+        const scored = feasible.map((r) => {
+          const first = assignedTotal.get(r) === 0 ? 0 : 1;
+          const off = hadTwoOffBefore(ctx.ws, r, col, ctx.dayStartCol) ? 0 : 1;
+          const total = assignedTotal.get(r);
+          const dtc = dayTypeCount.get(r)[dt];
+          const rand = Math.random();
+          return { r, key: [first, off, total, dtc, rand] };
+        });
+        scored.sort((a, b) => {
+          for (let i = 0; i < a.key.length; i++) {
+            if (a.key[i] < b.key[i]) return -1;
+            if (a.key[i] > b.key[i]) return 1;
+          }
+          return 0;
+        });
+        const chosen = scored[0].r;
+        assignments.set(day, chosen);
+        assignedTotal.set(chosen, assignedTotal.get(chosen) + 1);
+        dayTypeCount.get(chosen)[dt] += 1;
+        prevAssigned = chosen;
+      }
+
+      for (const [r, cnt] of assignedTotal.entries()) {
+        if (cnt < 1 || cnt > 2) {
+          const name = byRow.get(r).name;
+          throw new Error(`배정 횟수 오류: ${name}=${cnt}`);
+        }
+      }
+
+      for (const [day, row] of assignments.entries()) {
+        const c = ctx.dayStartCol + day - 1;
+        setCellObj(ctx.ws, row, c, { t: "s", v: "당직" });
+      }
+
+      return { assignments, assignedTotal, dayTypeCount, partUnsafeDays, eligible };
+    }
+
+    async function readWorkbook(file) {
+      const buf = await file.arrayBuffer();
+      return XLSX.read(buf, { type: "array", cellFormula: true, cellDates: false });
+    }
+
+    async function mergeTeamFiles(files) {
+      if (files.length !== 3) throw new Error("파일은 정확히 3개 업로드해야 합니다.");
+      const contexts = [];
+      for (const f of files) {
+        const wb = await readWorkbook(f);
+        contexts.push(loadContext(wb));
+      }
+
+      const base = contexts.slice().sort((a, b) => b.employees.length - a.employees.length)[0];
+      const baseMap = buildRowMap(base.employees);
+      const mergedValues = new Map();
+
+      for (const src of contexts) {
+        if (src.daysInMonth !== base.daysInMonth) {
+          throw new Error("월/일자 수가 다른 파일이 섞여 있습니다.");
+        }
+        const srcMap = buildRowMap(src.employees);
+        for (const [name, srcRow] of srcMap.entries()) {
+          if (!baseMap.has(name)) continue;
+          for (let day = 1; day <= base.daysInMonth; day++) {
+            const sv = getVal(src.ws, srcRow, src.dayStartCol + day - 1);
+            if (cleanText(sv) === "") continue;
+            const key = `${name}||${day}`;
+            if (!mergedValues.has(key)) {
+              mergedValues.set(key, sv);
+            } else {
+              const cur = cleanText(mergedValues.get(key));
+              const nxt = cleanText(sv);
+              if (cur !== nxt) throw new Error(`충돌: ${name} ${day}일 (${cur} vs ${nxt})`);
+            }
+          }
+        }
+      }
+
+      for (const e of base.employees) {
+        for (let day = 1; day <= base.daysInMonth; day++) {
+          clearCell(base.ws, e.row, base.dayStartCol + day - 1);
+        }
+      }
+      for (const [k, v] of mergedValues.entries()) {
+        const [name, dayStr] = k.split("||");
+        const day = Number(dayStr);
+        const row = baseMap.get(name);
+        setCellObj(base.ws, row, base.dayStartCol + day - 1, { t: "s", v: cleanText(v) });
+      }
+      return base;
+    }
+
+    function buildSummary(ctx, result) {
+      const byRow = new Map(result.eligible.map((e) => [e.row, e.name]));
+      const lines = [];
+      lines.push(`총 ${ctx.daysInMonth}일 배정 완료`);
+      for (const e of result.eligible) {
+        const c = result.assignedTotal.get(e.row);
+        const d = result.dayTypeCount.get(e.row);
+        lines.push(`- ${e.name}: ${c}회 (정상 ${d.normal} / 연장 ${d.extended})`);
+      }
+      if (result.partUnsafeDays.length) {
+        lines.push(`파트 오픈 예외일: ${result.partUnsafeDays.join(", ")}`);
+      }
+      return lines.join("\n");
+    }
+
+    function stamp() {
+      const d = new Date();
+      const p = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    }
+
+    filesInput.addEventListener("change", () => {
+      const files = Array.from(filesInput.files || []);
+      if (!files.length) {
+        filesInfo.textContent = "선택된 파일 없음";
+        return;
+      }
+      filesInfo.textContent = files.map((f, i) => `${i + 1}. ${f.name}`).join("\n");
+    });
+
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const files = Array.from(filesInput.files || []);
+        if (files.length !== 3) throw new Error("파일을 정확히 3개 선택하세요.");
+        generateBtn.disabled = true;
+        setStatus("파일 분석 및 취합 중...");
+        downloadBtn.classList.add("hidden");
+
+        const ctx = await mergeTeamFiles(files);
+        clearExistingDuty(ctx, ctx.employees.filter((e) => !EXCLUDED_NAMES.has(e.name)).map((e) => e.row));
+        const result = assignDuty(ctx);
+        restoreFormulas(ctx);
+
+        const wbout = XLSX.write(ctx.wb, { bookType: "xlsx", type: "array" });
+        state.outBlob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        state.outName = `당직확정본_자동생성_${stamp()}.xlsx`;
+
+        downloadBtn.classList.remove("hidden");
+        setStatus(buildSummary(ctx, result), "ok");
+      } catch (err) {
+        downloadBtn.classList.add("hidden");
+        setStatus("생성 실패: " + (err && err.message ? err.message : String(err)), "error");
+      } finally {
+        generateBtn.disabled = false;
+      }
+    });
+
+    downloadBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!state.outBlob) return;
+      const blob = state.outBlob;
+      const filename = state.outName || `automatic_dangjik_${stamp()}.xlsx`;
+      try {
+        if ("showSaveFilePicker" in window) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: "Excel Workbook",
+              accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] },
+            }],
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          setStatus("다운로드 완료", "ok");
+          return;
+        }
+      } catch (_) {
+        // Fallback below.
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      setStatus("다운로드 완료", "ok");
+    });
+  </script>
+</body>
+</html>
