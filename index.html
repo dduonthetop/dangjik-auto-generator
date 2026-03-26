@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>당직 자동취합 / 확정본 생성기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     :root {
@@ -25,7 +28,7 @@
         radial-gradient(circle at top left, rgba(15, 59, 132, 0.12), transparent 28%),
         linear-gradient(180deg, #f7fafd 0%, var(--bg) 100%);
       color: var(--text);
-      font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+      font-family: "Nanum Gothic", "Malgun Gothic", "Segoe UI", sans-serif;
     }
     .wrap { max-width: 980px; margin: 32px auto 40px; padding: 0 18px; }
     .hero {
@@ -73,6 +76,13 @@
       font-size: 15px;
       line-height: 1.7;
       max-width: 620px;
+    }
+    .hero h1,
+    .section-title,
+    .tab strong,
+    button,
+    .download-btn {
+      font-family: "Nanum Gothic", "Malgun Gothic", "Segoe UI", sans-serif;
     }
     .hero-logo {
       justify-self: end;
@@ -191,7 +201,7 @@
         </div>
       </div>
 
-    <section class="card">
+    <div class="card">
       <h2 class="section-title">업무 실행</h2>
       <p class="section-copy">필수 입력만 남기고 화면은 단순하게 유지했습니다. 기능 로직은 그대로 두고, 시각적으로만 더 신뢰감 있게 다듬은 버전입니다.</p>
       <form id="generatorForm">
@@ -211,7 +221,7 @@
         <div id="status" class="status">생성 대기 중</div>
         <a id="downloadBtn" class="download-btn hidden" href="#" download>3) 파일 다운로드</a>
       </div>
-    </section>
+    </div>
     </section>
     <p style="margin:10px 4px 0;color:#98a2b3;font-size:12px;">*문의 : 김민 주임, 황다경 주임</p>
   </main>
