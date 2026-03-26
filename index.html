@@ -76,6 +76,7 @@
       font-size: 15px;
       line-height: 1.7;
       max-width: 620px;
+      word-break: keep-all;
     }
     .hero h1,
     .section-title,
@@ -146,6 +147,7 @@
       color: var(--sub);
       font-size: 14px;
       line-height: 1.65;
+      word-break: keep-all;
     }
     .upload-box { border: 1px dashed #b8c6da; border-radius: 16px; background: linear-gradient(180deg, var(--brand-soft) 0%, #fafcff 100%); padding: 16px; margin-top: 14px; }
     .upload-box p { margin: 6px 0 8px; color: var(--sub); font-size: 14px; }
@@ -170,6 +172,50 @@
     .hidden { display: none; }
     .error { color: var(--err); }
     .ok { color: var(--ok); }
+
+    @media (max-width: 768px) {
+      .wrap {
+        margin: 18px auto 28px;
+        padding: 0 12px;
+      }
+      .hero {
+        padding: 22px 20px 24px;
+        border-radius: 22px;
+      }
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        margin-bottom: 10px;
+      }
+      h1 {
+        font-size: 38px;
+        line-height: 1.15;
+        word-break: keep-all;
+      }
+      .hero-copy {
+        font-size: 14px;
+        line-height: 1.75;
+      }
+      .hero-logo {
+        justify-self: start;
+        width: min(220px, 72%);
+        padding: 14px 16px;
+      }
+      .shell {
+        margin-top: -10px;
+        padding: 18px;
+      }
+      .tabs {
+        grid-template-columns: 1fr;
+      }
+      .card {
+        padding: 18px;
+      }
+    }
   </style>
 </head>
 <body>
