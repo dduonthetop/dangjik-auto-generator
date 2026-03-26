@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>?뱀쭅 ?먮룞痍⑦빀 / ?뺤젙蹂??앹꽦湲?/title>
+  <title>당직 자동취합 / 확정본 생성기</title>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     :root {
@@ -42,320 +42,39 @@
     .hidden { display: none; }
     .error { color: var(--err); }
     .ok { color: var(--ok); }
-
-    body {
-      background:
-        radial-gradient(circle at top left, rgba(21, 59, 125, 0.16), transparent 30%),
-        radial-gradient(circle at top right, rgba(184, 139, 68, 0.12), transparent 24%),
-        linear-gradient(180deg, #f8fbfd 0%, #edf3f8 100%);
-    }
-    .wrap {
-      max-width: 1080px;
-      margin: 32px auto 42px;
-      padding: 0 20px;
-    }
-    .hero {
-      position: relative;
-      overflow: hidden;
-      border-radius: 28px;
-      background:
-        linear-gradient(135deg, rgba(11, 36, 80, 0.98) 0%, rgba(20, 59, 125, 0.94) 55%, rgba(30, 82, 170, 0.88) 100%);
-      color: #fff;
-      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.14);
-      padding: 28px 30px 26px;
-      margin-bottom: 0;
-    }
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: auto -8% -30% auto;
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,0.24), rgba(255,255,255,0));
-      pointer-events: none;
-    }
-    .hero-grid {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 220px;
-      gap: 24px;
-      align-items: center;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.92);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
-      backdrop-filter: blur(10px);
-    }
-    .hero h1 {
-      margin: 0 0 10px;
-      font-size: 36px;
-      line-height: 1.14;
-      letter-spacing: -0.03em;
-      font-weight: 800;
-      color: #fff;
-    }
-    .hero-copy {
-      margin: 0;
-      color: rgba(255,255,255,0.86);
-      font-size: 15px;
-      line-height: 1.75;
-      max-width: 640px;
-    }
-    .logo-panel {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px 20px;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.18);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 12px 28px rgba(5, 15, 35, 0.2);
-      backdrop-filter: blur(12px);
-      min-height: 108px;
-    }
-    .logo-panel img {
-      width: 170px;
-      max-width: 100%;
-      display: block;
-    }
-    .shell {
-      position: relative;
-      z-index: 2;
-      margin-top: -24px;
-      padding: 24px;
-      border-radius: 28px;
-      background: rgba(255,255,255,0.94);
-      border: 1px solid rgba(255,255,255,0.7);
-      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.14);
-      backdrop-filter: blur(12px);
-    }
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 22px;
-    }
-    .step {
-      padding: 16px 18px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,247,251,0.98));
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-    }
-    .step-num {
-      display: inline-flex;
-      width: 28px;
-      height: 28px;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      background: #dce8ff;
-      color: #153b7d;
-      font-size: 12px;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-    .step strong {
-      display: block;
-      margin-bottom: 4px;
-      color: #0f172a;
-      font-size: 14px;
-      font-weight: 800;
-    }
-    .step span {
-      color: #475569;
-      font-size: 12px;
-      line-height: 1.55;
-    }
-    .content-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
-      gap: 20px;
-      align-items: start;
-    }
-    .panel-card {
-      background: rgba(255,255,255,0.9);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 24px;
-      padding: 22px;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-    }
-    .panel-title {
-      margin: 0 0 8px;
-      color: #0f172a;
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    .panel-sub {
-      margin: 0 0 16px;
-      color: #475569;
-      font-size: 14px;
-      line-height: 1.65;
-    }
-    .upload-box {
-      border: 1px dashed rgba(21, 59, 125, 0.28);
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(220,232,255,0.32), rgba(255,255,255,0.88));
-      padding: 18px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.82);
-    }
-    .file-list {
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(15,23,42,0.06);
-      line-height: 1.7;
-    }
-    input[type="file"]::file-selector-button {
-      margin-right: 12px;
-      border: 0;
-      border-radius: 10px;
-      background: #ebf1fb;
-      color: #153b7d;
-      padding: 10px 14px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
-    }
-    button, .download-btn {
-      width: 100%;
-      border-radius: 14px;
-      padding: 14px 18px;
-      font-size: 15px;
-      font-weight: 800;
-      box-shadow: 0 14px 24px rgba(11, 36, 80, 0.22);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-    }
-    button:hover, .download-btn:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.03);
-    }
-    .download-btn {
-      background: linear-gradient(135deg, #0f7a57 0%, #0c6247 100%);
-      box-shadow: 0 14px 24px rgba(15, 122, 87, 0.22);
-    }
-    .status {
-      min-height: 116px;
-      margin-bottom: 12px;
-      padding: 16px 18px;
-      border-radius: 18px;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      background: linear-gradient(180deg, rgba(248,250,252,0.96), rgba(255,255,255,0.92));
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
-      line-height: 1.72;
-    }
-    .side-card {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      min-height: 100%;
-    }
-    .side-block {
-      padding: 18px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(246,248,252,0.96), rgba(255,255,255,0.94));
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.82);
-    }
-    .side-label {
-      margin: 0 0 8px;
-      color: #153b7d;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 800;
-    }
-    .side-value {
-      margin: 0;
-      color: #0f172a;
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-    }
-    .side-copy {
-      margin: 8px 0 0;
-      color: #475569;
-      font-size: 13px;
-      line-height: 1.7;
-    }
-    .footer-note {
-      margin: 16px 8px 0;
-      color: #7c8aa5;
-      font-size: 12px;
-      text-align: right;
-    }
-    @media (max-width: 900px) {
-      .hero-grid,
-      .steps,
-      .content-grid {
-        grid-template-columns: 1fr;
-      }
-      .shell {
-        margin-top: -18px;
-        padding: 18px;
-      }
-      .hero h1 {
-        font-size: 30px;
-      }
-    }
   </style>
 </head>
 <body>
   <main class="wrap">
-    <section class="hero">
-      <div class="hero-grid">
-        <div>
-          <div class="eyebrow">IPARK Mall Operations Utility</div>
-          <h1>?뱀쭅 ?먮룞痍⑦빀 / ?뺤젙蹂??앹꽦湲?/h1>
-          <p class="hero-copy">?낅줈?쒕????앹꽦, ?ㅼ슫濡쒕뱶源뚯? ??踰덉뿉 ?댁뼱吏???댁쁺 ?섏씠吏?낅땲?? 湲곗〈 ?묒떇怨?洹쒖튃???좎??섎㈃?쒕룄 ??鍮좊Ⅴ怨??뺣룉??諛⑹떇?쇰줈 ?뱀쭅 ?뺤젙蹂몄쓣 留뚮뱾 ???덉뒿?덈떎.</p>
-        </div>
-        <div class="logo-panel">
-          <img src="iparkmallci.png" alt="IPARK Mall CI">
-        </div>
-      </div>
-    </section>
     <section class="card">
+      <h1>당직 자동취합 / 확정본 생성기</h1>
+      <p style="margin:0 0 12px;color:#6b7280;font-size:14px;">업로드 -> 생성 -> 다운로드 순서로 동작합니다.</p>
 
       <form id="generatorForm">
         <div class="upload-box">
-          <strong>1) ? ?뚯씪 ?낅줈??/strong>
-          <p>由щ튃?/?⑥뀡1?/?⑥뀡2? ?뚯씪 3媛쒕? ?쒕쾲???좏깮?섏꽭??</p>
+          <strong>1) 팀 파일 업로드</strong>
+          <p>리빙팀/패션1팀/패션2팀 파일 3개를 한번에 선택하세요.</p>
           <input id="files" type="file" accept=".xlsx,.xlsm" multiple required>
-          <div id="filesInfo" class="file-list">?좏깮???뚯씪 ?놁쓬</div>
+          <div id="filesInfo" class="file-list">선택된 파일 없음</div>
         </div>
 
         <div class="actions">
-          <button id="runBtn" type="submit">2) ?뱀쭅?뺤젙蹂??앹꽦</button>
+          <button id="runBtn" type="submit">2) 당직확정본 생성</button>
         </div>
       </form>
 
       <div class="result">
-        <div id="status" class="status">?앹꽦 ?湲?以?/div>
-        <a id="downloadBtn" class="download-btn hidden" href="#" download>3) ?뚯씪 ?ㅼ슫濡쒕뱶</a>
+        <div id="status" class="status">생성 대기 중</div>
+        <a id="downloadBtn" class="download-btn hidden" href="#" download>3) 파일 다운로드</a>
       </div>
     </section>
-    <p style="margin:10px 4px 0;color:#98a2b3;font-size:12px;">*臾몄쓽 : 源誘?二쇱엫, ?⑸떎寃?二쇱엫</p>
+    <p style="margin:10px 4px 0;color:#98a2b3;font-size:12px;">*문의 : 김민 주임, 황다경 주임</p>
   </main>
 
   <script>
-    const EXCLUDED_NAMES = new Set(["?대쾾吏?, "?댁꽑??, "?ㅻ끃洹?]);
-    const OFF_MARKERS = new Set(["??, "?댁썡", "諛섏감", "?곗감", "?덈퉬援?]);
-    const SUMMARY_STOP_MARKERS = ["?대Т?몄썝", "異쒓렐?몄썝", "?뱀쭅?몄썝"];
+    const EXCLUDED_NAMES = new Set(["이범진", "이선한", "윤녹규"]);
+    const OFF_MARKERS = new Set(["●", "이월", "반차", "연차", "예비군"]);
+    const SUMMARY_STOP_MARKERS = ["휴무인원", "출근인원", "당직인원"];
 
     const form = document.getElementById("generatorForm");
     const filesInput = document.getElementById("files");
@@ -446,7 +165,7 @@
       const maxCol = Math.min(30, ws.columnCount || 1);
       for (let r = 1; r <= maxRow; r++) {
         for (let c = 1; c <= maxCol; c++) {
-          if (normalizeLabel(ws.getCell(r, c).value) === "?깅챸") return { headerRow: r, nameCol: c };
+          if (normalizeLabel(ws.getCell(r, c).value) === "성명") return { headerRow: r, nameCol: c };
         }
       }
       return null;
@@ -475,18 +194,18 @@
       for (let r = 1; r <= Math.min(8, ws.rowCount); r++) {
         for (let c = 1; c <= Math.min(12, ws.columnCount); c++) {
           const txt = toText(ws.getCell(r, c).value);
-          if (txt === "??) {
+          if (txt === "년") {
             const left = Number(ws.getCell(r, c - 1).value);
             if (left >= 2000 && left <= 2100) year = Math.trunc(left);
           }
-          if (txt === "??) {
+          if (txt === "월") {
             const left = Number(ws.getCell(r, c - 1).value);
             if (left >= 1 && left <= 12) month = Math.trunc(left);
           }
         }
       }
       if (year && month) return { year, month };
-      throw new Error("?????뺣낫瑜?李얠? 紐삵뻽?듬땲??");
+      throw new Error("년/월 정보를 찾지 못했습니다.");
     }
 
     function findFirstDayCol(ws, headerRow, nameCol) {
@@ -506,7 +225,7 @@
       for (const ws of workbook.worksheets) {
         if (findNameHeader(ws)) return ws;
       }
-      throw new Error("?깅챸 ?ㅻ뜑媛 ?덈뒗 ?쒗듃瑜?李얠? 紐삵뻽?듬땲??");
+      throw new Error("성명 헤더가 있는 시트를 찾지 못했습니다.");
     }
 
     function extractEmployees(ws, headerRow, nameCol) {
@@ -530,18 +249,18 @@
         let part = toText(ws.getCell(row, partCol).value) || (partMap.get(row) || "");
         part = part ? part.replace(/\n/g, " ").trim() : "";
         if (!part) part = `PART_ROW_${row}`;
-        const team = currentTeam || "誘몃텇瑜?;
+        const team = currentTeam || "미분류";
         employees.push({ row, name, team, part: `${team}|${part}` });
       }
 
-      if (!employees.length) throw new Error("吏곸썝 紐⑸줉???몄떇?섏? 紐삵뻽?듬땲??");
+      if (!employees.length) throw new Error("직원 목록을 인식하지 못했습니다.");
       return employees;
     }
 
     function loadContext(wb) {
       const ws = findScheduleSheet(wb);
       const header = findNameHeader(ws);
-      if (!header) throw new Error("?깅챸 ?ㅻ뜑瑜?李얠? 紐삵뻽?듬땲??");
+      if (!header) throw new Error("성명 헤더를 찾지 못했습니다.");
       const dayStartCol = findFirstDayCol(ws, header.headerRow, header.nameCol);
       const ym = resolveYearMonth(ws, header.headerRow, dayStartCol);
       const daysInMonth = new Date(ym.year, ym.month, 0).getDate();
@@ -564,7 +283,7 @@
     function buildEmployeeRowMap(employees) {
       const m = new Map();
       for (const e of employees) {
-        if (m.has(e.name)) throw new Error(`以묐났 吏곸썝紐? ${e.name}`);
+        if (m.has(e.name)) throw new Error(`중복 직원명: ${e.name}`);
         m.set(e.name, e.row);
       }
       return m;
@@ -573,7 +292,7 @@
     function isUnavailable(value) {
       const t = toText(value);
       if (!t) return false;
-      if (t === "?뱀쭅") return false;
+      if (t === "당직") return false;
       return OFF_MARKERS.has(t);
     }
 
@@ -585,7 +304,7 @@
       if (dayCol - 1 < dayStartCol) return false;
       const prev1 = toText(ws.getCell(row, dayCol - 1).value);
       const prev2 = dayCol - 2 >= dayStartCol ? toText(ws.getCell(row, dayCol - 2).value) : "";
-      return prev1 === "?? && prev2 === "??;
+      return prev1 === "●" && prev2 === "●";
     }
 
     function classifyDayType(year, month, day) {
@@ -596,7 +315,7 @@
     function clearExistingDuty(ws, rows, dayStartCol, dayEndCol) {
       for (const row of rows) {
         for (let col = dayStartCol; col <= dayEndCol; col++) {
-          if (toText(ws.getCell(row, col).value) === "?뱀쭅") ws.getCell(row, col).value = null;
+          if (toText(ws.getCell(row, col).value) === "당직") ws.getCell(row, col).value = null;
         }
       }
     }
@@ -605,10 +324,10 @@
       const fixedAssignments = new Map();
       for (const emp of ctx.employees) {
         for (let col = ctx.dayStartCol; col <= ctx.dayEndCol; col++) {
-          if (toText(ctx.ws.getCell(emp.row, col).value) !== "?뱀쭅") continue;
+          if (toText(ctx.ws.getCell(emp.row, col).value) !== "당직") continue;
           const day = col - ctx.dayStartCol + 1;
           if (fixedAssignments.has(day) && fixedAssignments.get(day) !== emp.row) {
-            throw new Error(`${day}??怨좎젙 ?뱀쭅????紐낆뿉寃?以묐났 ?낅젰?섏뿀?듬땲??`);
+            throw new Error(`${day}일 고정 당직이 두 명에게 중복 입력되었습니다.`);
           }
           fixedAssignments.set(day, emp.row);
         }
@@ -629,17 +348,17 @@
         const emp = byRow.get(row);
 
         if (EXCLUDED_NAMES.has(emp.name)) {
-          throw new Error(`${emp.name}?(?? ????쒖쇅 ??곸씤??${day}??怨좎젙 ?뱀쭅?쇰줈 ?낅젰?섏뿀?듬땲??`);
+          throw new Error(`${emp.name}은(는) 팀장 제외 대상인데 ${day}일 고정 당직으로 입력되었습니다.`);
         }
 
         const nextCount = (byNameCount.get(emp.name) || 0) + 1;
         byNameCount.set(emp.name, nextCount);
         if (nextCount > 2) {
-          throw new Error(`${emp.name}??怨좎젙 ?뱀쭅??3???댁긽?낅땲?? 怨좎젙 ?뱀쭅??理쒕? 2?뚭퉴吏留?媛?ν빀?덈떎.`);
+          throw new Error(`${emp.name}의 고정 당직이 3회 이상입니다. 고정 당직도 최대 2회까지만 가능합니다.`);
         }
 
         if (prevDay !== null && day === prevDay + 1 && row === prevRow) {
-          throw new Error(`${emp.name}??怨좎젙 ?뱀쭅???곗냽??${prevDay}?? ${day}??濡??낅젰?섏뿀?듬땲??`);
+          throw new Error(`${emp.name}의 고정 당직이 연속일(${prevDay}일, ${day}일)로 입력되었습니다.`);
         }
 
         prevDay = day;
@@ -654,7 +373,7 @@
 
       for (const emp of ctx.employees) {
         ctx.ws.getCell(emp.row, dutyCountCol).value = {
-          formula: `COUNTIF(${dayStartLetter}${emp.row}:${dayEndLetter}${emp.row},"?뱀쭅")`,
+          formula: `COUNTIF(${dayStartLetter}${emp.row}:${dayEndLetter}${emp.row},"당직")`,
         };
       }
 
@@ -662,21 +381,21 @@
       const lastRow = Math.max(...ctx.employees.map((e) => e.row));
       const ajCol = colToNumber("AJ");
       ctx.ws.getCell(2, ajCol).value = {
-        formula: `COUNTIF(${dayStartLetter}${firstRow}:${dayEndLetter}${lastRow},"?뱀쭅")`,
+        formula: `COUNTIF(${dayStartLetter}${firstRow}:${dayEndLetter}${lastRow},"당직")`,
       };
     }
 
     function assignDuty(ctx, fixedAssignments) {
       const ws = ctx.ws;
       const eligible = ctx.employees.filter((e) => !EXCLUDED_NAMES.has(e.name));
-      if (!eligible.length) throw new Error("?뱀쭅 諛곗젙 媛?ν븳 吏곸썝???놁뒿?덈떎.");
+      if (!eligible.length) throw new Error("당직 배정 가능한 직원이 없습니다.");
 
       const employeeCount = eligible.length;
       if (ctx.daysInMonth < employeeCount) {
-        throw new Error(`諛곗젙 遺덇?: ?뱀쭅??${ctx.daysInMonth}) < ????쒖쇅 ?몄썝(${employeeCount})`);
+        throw new Error(`배정 불가: 당직일(${ctx.daysInMonth}) < 팀장 제외 인원(${employeeCount})`);
       }
       if (ctx.daysInMonth > employeeCount * 2) {
-        throw new Error(`諛곗젙 遺덇?: ?뱀쭅??${ctx.daysInMonth}) > 理쒕? ?덉슜(${employeeCount * 2})`);
+        throw new Error(`배정 불가: 당직일(${ctx.daysInMonth}) > 최대 허용(${employeeCount * 2})`);
       }
 
       const partMembers = new Map();
@@ -723,7 +442,7 @@
           .filter((row) => row !== prevAssigned);
 
         if (!candidates.length) {
-          throw new Error(`${day}??諛곗젙 遺덇?: ?곗냽湲덉?/2?뚰븳??議곌굔 異⑸룎`);
+          throw new Error(`${day}일 배정 불가: 연속금지/2회한도 조건 충돌`);
         }
 
         const safeRows = [];
@@ -755,7 +474,7 @@
         } else if (!safeRows.length) {
           partUnsafeDays.push(day);
         }
-        if (!feasible.length) throw new Error(`${day}??諛곗젙 遺덇?: ?꾨낫 ?놁쓬`);
+        if (!feasible.length) throw new Error(`${day}일 배정 불가: 후보 없음`);
 
         const scored = feasible.map((row) => {
           const firstAssign = assignedTotal.get(row) === 0 ? 0 : 1;
@@ -781,12 +500,12 @@
 
       for (const emp of eligible) {
         const cnt = assignedTotal.get(emp.row);
-        if (cnt < 1 || cnt > 2) throw new Error(`?잛닔 ?쒖빟 ?꾨컲: ${emp.name}=${cnt}`);
+        if (cnt < 1 || cnt > 2) throw new Error(`횟수 제약 위반: ${emp.name}=${cnt}`);
       }
 
       for (const [day, row] of assignments.entries()) {
         const col = ctx.dayStartCol + day - 1;
-        ws.getCell(row, col).value = "?뱀쭅";
+        ws.getCell(row, col).value = "당직";
       }
 
       return { assignments, assignedTotal, dayTypeCount, partUnsafeDays, eligible };
@@ -800,7 +519,7 @@
     }
 
     async function mergeTeamFiles(files) {
-      if (files.length !== 3) throw new Error("?뚯씪? ?뺥솗??3媛??낅줈?쒗빐???⑸땲??");
+      if (files.length !== 3) throw new Error("파일은 정확히 3개 업로드해야 합니다.");
       const contexts = [];
       for (const file of files) {
         const wb = await loadWorkbook(file);
@@ -814,7 +533,7 @@
 
       for (const source of contexts) {
         if (source.year !== base.year || source.month !== base.month || source.daysInMonth !== base.daysInMonth) {
-          throw new Error("???뺣낫媛 ?ㅻⅨ ?뚯씪???욎뿬 ?덉뒿?덈떎.");
+          throw new Error("월 정보가 다른 파일이 섞여 있습니다.");
         }
         const sourceNameToRow = buildEmployeeRowMap(source.employees);
         for (const [name, sourceRow] of sourceNameToRow.entries()) {
@@ -831,7 +550,7 @@
             const current = toText(mergedValues.get(key));
             const incoming = toText(value);
             if (current !== incoming) {
-              throw new Error(`媛?異⑸룎: ${name} ${day}??(${current} vs ${incoming})`);
+              throw new Error(`값 충돌: ${name} ${day}일 (${current} vs ${incoming})`);
             }
           }
         }
@@ -854,15 +573,15 @@
 
     function summaryText(ctx, result) {
       const lines = [];
-      lines.push(`珥?${ctx.daysInMonth}??諛곗젙 ?꾨즺`);
+      lines.push(`총 ${ctx.daysInMonth}일 배정 완료`);
       for (const emp of result.eligible) {
         const total = result.assignedTotal.get(emp.row);
         const normal = result.dayTypeCount.get(emp.row).normal;
         const extended = result.dayTypeCount.get(emp.row).extended;
-        lines.push(`- ${emp.name}: 珥?${total}??(?뺤긽 ${normal} / ?곗옣 ${extended})`);
+        lines.push(`- ${emp.name}: 총 ${total}회 (정상 ${normal} / 연장 ${extended})`);
       }
       if (result.partUnsafeDays.length) {
-        lines.push(`?뚰듃 ?ㅽ뵂 ?덉쇅?? ${result.partUnsafeDays.join(", ")}`);
+        lines.push(`파트 오픈 예외일: ${result.partUnsafeDays.join(", ")}`);
       }
       return lines.join("\n");
     }
@@ -876,7 +595,7 @@
     filesInput.addEventListener("change", () => {
       const files = Array.from(filesInput.files || []);
       if (!files.length) {
-        filesInfo.textContent = "?좏깮???뚯씪 ?놁쓬";
+        filesInfo.textContent = "선택된 파일 없음";
         return;
       }
       filesInfo.textContent = files.map((f, i) => `${i + 1}. ${f.name}`).join("\n");
@@ -892,10 +611,10 @@
 
       try {
         const files = Array.from(filesInput.files || []);
-        if (files.length !== 3) throw new Error("?뚯씪???뺥솗??3媛??좏깮?섏꽭??");
+        if (files.length !== 3) throw new Error("파일을 정확히 3개 선택하세요.");
 
         runBtn.disabled = true;
-        setStatus("?뚯씪 遺꾩꽍 諛?痍⑦빀 以?..");
+        setStatus("파일 분석 및 취합 중...");
 
         const ctx = await mergeTeamFiles(files);
         const fixedAssignments = collectFixedAssignments(ctx);
@@ -910,7 +629,7 @@
           [outBuffer],
           { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
         );
-        outputName = `?뱀쭅?뺤젙蹂??먮룞?앹꽦_${stamp()}.xlsx`;
+        outputName = `당직확정본_자동생성_${stamp()}.xlsx`;
         downloadUrl = URL.createObjectURL(outputBlob);
         downloadBtn.href = downloadUrl;
         downloadBtn.download = outputName;
@@ -918,7 +637,7 @@
 
         setStatus(summaryText(ctx, result), "ok");
       } catch (err) {
-        setStatus(`?앹꽦 ?ㅽ뙣: ${err && err.message ? err.message : String(err)}`, "error");
+        setStatus(`생성 실패: ${err && err.message ? err.message : String(err)}`, "error");
       } finally {
         runBtn.disabled = false;
       }
@@ -939,13 +658,13 @@
           const writable = await handle.createWritable();
           await writable.write(outputBlob);
           await writable.close();
-          setStatus("?ㅼ슫濡쒕뱶 ?꾨즺", "ok");
+          setStatus("다운로드 완료", "ok");
           return;
         } catch (_) {
           // fallback to normal anchor download
         }
       }
-      setStatus("?ㅼ슫濡쒕뱶 ?꾨즺", "ok");
+      setStatus("다운로드 완료", "ok");
     });
   </script>
 </body>
