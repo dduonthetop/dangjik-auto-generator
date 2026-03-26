@@ -7,34 +7,152 @@
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     :root {
-      --bg: #f5f7fb;
-      --card: #fff;
-      --line: #d8deea;
+      --bg: #eef3f8;
+      --card: #ffffff;
+      --line: #d8e1ee;
       --text: #111827;
-      --sub: #6b7280;
-      --btn: #0b5fff;
+      --sub: #5b6472;
+      --brand: #0f3b84;
+      --brand-deep: #0a2758;
+      --brand-soft: #eaf1fb;
+      --btn: linear-gradient(135deg, #154694 0%, #0b2d63 100%);
       --ok: #047857;
       --err: #b91c1c;
     }
-    body { margin: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", "Malgun Gothic", sans-serif; }
-    .wrap { max-width: 860px; margin: 28px auto; padding: 0 16px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
-    h1 { margin: 0 0 14px; font-size: 26px; }
-    .upload-box { border: 1px dashed #9ca3af; border-radius: 10px; background: #fafafa; padding: 14px; margin-top: 14px; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(15, 59, 132, 0.12), transparent 28%),
+        linear-gradient(180deg, #f7fafd 0%, var(--bg) 100%);
+      color: var(--text);
+      font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+    }
+    .wrap { max-width: 980px; margin: 32px auto 40px; padding: 0 18px; }
+    .hero {
+      background: linear-gradient(135deg, var(--brand-deep) 0%, var(--brand) 58%, #1f5ab6 100%);
+      border-radius: 24px;
+      padding: 28px 30px;
+      color: #fff;
+      box-shadow: 0 20px 44px rgba(15, 23, 42, 0.16);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -50px;
+      top: -30px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0));
+    }
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 180px;
+      gap: 24px;
+      align-items: center;
+    }
+    .eyebrow {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0 0 10px; font-size: 32px; letter-spacing: -0.03em; }
+    .hero-copy {
+      margin: 0;
+      color: rgba(255,255,255,0.86);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 620px;
+    }
+    .hero-logo {
+      justify-self: end;
+      width: 160px;
+      max-width: 100%;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    .shell {
+      margin-top: -18px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1);
+      backdrop-filter: blur(10px);
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .tab {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+    .tab strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .tab span {
+      display: block;
+      font-size: 12px;
+      color: var(--sub);
+      line-height: 1.5;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .section-copy {
+      margin: 0 0 16px;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .upload-box { border: 1px dashed #b8c6da; border-radius: 16px; background: linear-gradient(180deg, var(--brand-soft) 0%, #fafcff 100%); padding: 16px; margin-top: 14px; }
     .upload-box p { margin: 6px 0 8px; color: var(--sub); font-size: 14px; }
     input[type="file"] { width: 100%; }
-    .file-list { margin-top: 8px; color: var(--sub); font-size: 14px; white-space: pre-line; }
+    .file-list { margin-top: 10px; color: var(--sub); font-size: 14px; white-space: pre-line; background: #fff; border: 1px solid #e6ebf2; border-radius: 12px; padding: 10px 12px; }
     .actions { margin-top: 18px; }
     button, .download-btn {
       display: inline-block;
       background: var(--btn);
       color: #fff;
       border: 0;
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 14px;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 15px;
       text-decoration: none;
       cursor: pointer;
+      box-shadow: 0 12px 22px rgba(15, 59, 132, 0.18);
     }
     button[disabled] { opacity: 0.6; cursor: wait; }
     .result { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line); }
@@ -46,10 +164,36 @@
 </head>
 <body>
   <main class="wrap">
-    <section class="card">
-      <h1>당직 자동취합 / 확정본 생성기</h1>
-      <p style="margin:0 0 12px;color:#6b7280;font-size:14px;">업로드 -> 생성 -> 다운로드 순서로 동작합니다.</p>
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">IPARK Mall Duty Automation</div>
+          <h1>당직 자동취합 / 확정본 생성기</h1>
+          <p class="hero-copy">휴무표 취합부터 최종 당직확정본 생성까지, 현업에서 바로 쓸 수 있도록 정리한 운영용 페이지입니다.</p>
+        </div>
+        <img class="hero-logo" src="iparkmallci.png" alt="IPARK Mall CI">
+      </div>
+    </section>
 
+    <section class="shell">
+      <div class="tabs" aria-hidden="true">
+        <div class="tab">
+          <strong>1. 파일 업로드</strong>
+          <span>팀별 휴무표 3개를 불러옵니다.</span>
+        </div>
+        <div class="tab">
+          <strong>2. 자동 생성</strong>
+          <span>고정 당직과 운영 규칙을 함께 반영합니다.</span>
+        </div>
+        <div class="tab">
+          <strong>3. 결과 다운로드</strong>
+          <span>기존 양식을 유지한 파일로 저장합니다.</span>
+        </div>
+      </div>
+
+    <section class="card">
+      <h2 class="section-title">업무 실행</h2>
+      <p class="section-copy">필수 입력만 남기고 화면은 단순하게 유지했습니다. 기능 로직은 그대로 두고, 시각적으로만 더 신뢰감 있게 다듬은 버전입니다.</p>
       <form id="generatorForm">
         <div class="upload-box">
           <strong>1) 팀 파일 업로드</strong>
@@ -67,6 +211,7 @@
         <div id="status" class="status">생성 대기 중</div>
         <a id="downloadBtn" class="download-btn hidden" href="#" download>3) 파일 다운로드</a>
       </div>
+    </section>
     </section>
     <p style="margin:10px 4px 0;color:#98a2b3;font-size:12px;">*문의 : 김민 주임, 황다경 주임</p>
   </main>
