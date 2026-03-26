@@ -320,6 +320,52 @@
       }
     }
 
+    function collectFixedAssignments(ctx) {
+      const fixedAssignments = new Map();
+      for (const emp of ctx.employees) {
+        for (let col = ctx.dayStartCol; col <= ctx.dayEndCol; col++) {
+          if (toText(ctx.ws.getCell(emp.row, col).value) !== "당직") continue;
+          const day = col - ctx.dayStartCol + 1;
+          if (fixedAssignments.has(day) && fixedAssignments.get(day) !== emp.row) {
+            throw new Error(`${day}일 고정 당직이 두 명에게 중복 입력되었습니다.`);
+          }
+          fixedAssignments.set(day, emp.row);
+        }
+      }
+      return fixedAssignments;
+    }
+
+    function validateFixedAssignments(fixedAssignments, employees) {
+      if (!fixedAssignments || fixedAssignments.size === 0) return;
+
+      const byRow = new Map(employees.map((emp) => [emp.row, emp]));
+      const byNameCount = new Map();
+      let prevDay = null;
+      let prevRow = null;
+
+      for (const day of Array.from(fixedAssignments.keys()).sort((a, b) => a - b)) {
+        const row = fixedAssignments.get(day);
+        const emp = byRow.get(row);
+
+        if (EXCLUDED_NAMES.has(emp.name)) {
+          throw new Error(`${emp.name}은(는) 팀장 제외 대상인데 ${day}일 고정 당직으로 입력되었습니다.`);
+        }
+
+        const nextCount = (byNameCount.get(emp.name) || 0) + 1;
+        byNameCount.set(emp.name, nextCount);
+        if (nextCount > 2) {
+          throw new Error(`${emp.name}의 고정 당직이 3회 이상입니다. 고정 당직도 최대 2회까지만 가능합니다.`);
+        }
+
+        if (prevDay !== null && day === prevDay + 1 && row === prevRow) {
+          throw new Error(`${emp.name}의 고정 당직이 연속일(${prevDay}일, ${day}일)로 입력되었습니다.`);
+        }
+
+        prevDay = day;
+        prevRow = row;
+      }
+    }
+
     function restoreDutyFormulas(ctx) {
       const dutyCountCol = ctx.nameCol + 3;
       const dayStartLetter = colToLetters(ctx.dayStartCol);
@@ -339,7 +385,7 @@
       };
     }
 
-    function assignDuty(ctx) {
+    function assignDuty(ctx, fixedAssignments) {
       const ws = ctx.ws;
       const eligible = ctx.employees.filter((e) => !EXCLUDED_NAMES.has(e.name));
       if (!eligible.length) throw new Error("당직 배정 가능한 직원이 없습니다.");
@@ -367,11 +413,25 @@
         dayTypeCount.set(emp.row, { normal: 0, extended: 0 });
       }
 
-      const assignments = new Map();
+      const assignments = new Map(fixedAssignments || []);
       const partUnsafeDays = [];
       let prevAssigned = null;
 
+      if (fixedAssignments && fixedAssignments.size > 0) {
+        validateFixedAssignments(fixedAssignments, eligible);
+        for (const [day, row] of fixedAssignments.entries()) {
+          const fixedDayType = classifyDayType(ctx.year, ctx.month, day);
+          assignedTotal.set(row, assignedTotal.get(row) + 1);
+          dayTypeCount.get(row)[fixedDayType] += 1;
+        }
+        if (fixedAssignments.has(1)) prevAssigned = fixedAssignments.get(1);
+      }
+
       for (let day = 1; day <= ctx.daysInMonth; day++) {
+        if (assignments.has(day)) {
+          prevAssigned = assignments.get(day);
+          continue;
+        }
         const col = ctx.dayStartCol + day - 1;
         const dayType = classifyDayType(ctx.year, ctx.month, day);
 
@@ -557,10 +617,11 @@
         setStatus("파일 분석 및 취합 중...");
 
         const ctx = await mergeTeamFiles(files);
+        const fixedAssignments = collectFixedAssignments(ctx);
         const eligibleRows = ctx.employees.filter((e) => !EXCLUDED_NAMES.has(e.name)).map((e) => e.row);
         clearExistingDuty(ctx.ws, eligibleRows, ctx.dayStartCol, ctx.dayEndCol);
 
-        const result = assignDuty(ctx);
+        const result = assignDuty(ctx, fixedAssignments);
         restoreDutyFormulas(ctx);
 
         const outBuffer = await ctx.wb.xlsx.writeBuffer();
