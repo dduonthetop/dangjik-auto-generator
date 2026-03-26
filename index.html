@@ -54,22 +54,25 @@
       position: relative;
       z-index: 1;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 180px;
-      gap: 24px;
+      gap: 20px;
+    }
+    .hero-top {
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.22);
     }
     .eyebrow {
       display: inline-block;
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.15);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.92);
+      white-space: nowrap;
     }
-    h1 { margin: 0 0 10px; font-size: 32px; letter-spacing: -0.03em; }
+    h1 { margin: 0; font-size: 32px; letter-spacing: -0.03em; }
     .hero-copy {
       margin: 0;
       color: rgba(255,255,255,0.86);
@@ -86,14 +89,14 @@
       font-family: "Nanum Gothic", sans-serif;
     }
     .hero-logo {
-      justify-self: end;
-      width: 160px;
+      width: 150px;
       max-width: 100%;
-      padding: 16px 18px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.16);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+      display: block;
+      flex: 0 0 auto;
+    }
+    .hero-body {
+      display: grid;
+      gap: 14px;
     }
     .shell {
       margin-top: -18px;
@@ -183,13 +186,17 @@
         border-radius: 22px;
       }
       .hero-grid {
-        grid-template-columns: 1fr;
         gap: 18px;
       }
+      .hero-top {
+        align-items: flex-start;
+        gap: 12px;
+        padding-bottom: 12px;
+      }
       .eyebrow {
-        font-size: 11px;
-        letter-spacing: 0.05em;
-        margin-bottom: 10px;
+        font-size: 12px;
+        letter-spacing: 0.03em;
+        white-space: normal;
       }
       h1 {
         font-size: 38px;
@@ -201,9 +208,7 @@
         line-height: 1.75;
       }
       .hero-logo {
-        justify-self: start;
-        width: min(220px, 72%);
-        padding: 14px 16px;
+        width: min(160px, 42%);
       }
       .shell {
         margin-top: -10px;
@@ -222,12 +227,14 @@
   <main class="wrap">
     <section class="hero">
       <div class="hero-grid">
-        <div>
-          <div class="eyebrow">IPARK Mall Duty Automation</div>
+        <div class="hero-top">
+          <div class="eyebrow">IPARKmall Schedule Auto-generator</div>
+          <img class="hero-logo" src="iparkmallci_white.png" alt="IPARK Mall CI">
+        </div>
+        <div class="hero-body">
           <h1>당직 자동취합 및 당직 확정본 생성기</h1>
           <p class="hero-copy">휴무표 취합부터 최종 당직확정본 생성까지,<br>5초 안에 생성이 가능합니다.</p>
         </div>
-        <img class="hero-logo" src="iparkmallci_white.png" alt="IPARK Mall CI">
       </div>
     </section>
 
